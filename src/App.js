@@ -5,14 +5,14 @@ import { FaBars, FaCog, FaPlus, FaUserCircle, FaPencilAlt } from "react-icons/fa
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [model, setModel] = useState("GotiLo-pro");
+  const [model, setModel] = useState("gemini-1.5-flash");
   const [modelDropdown, setModelDropdown] = useState(false);
   const [chats, setChats] = useState([
     { id: 1, name: "New chat", messages: [ { role: "assistant", content: "Hello, Yash" } ] }
   ]);
   const [currentChatId, setCurrentChatId] = useState(1);
   const [chatCounter, setChatCounter] = useState(2);
-  const models = ["GotiLo-pro", "GotiLo-pro-vision"];
+  const models = ["gemini-1.5-flash"];
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingChatName, setEditingChatName] = useState("");
   const userAvatar = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQoYalG0iZwdwwSFMhNL4aDADjcSJFcuo31Y9OY6saF8ZG5dq3lLc8uXw0eJfUwvdwjTw&usqp=CAU';
@@ -153,7 +153,7 @@ function App() {
                 onClick={() => setModelDropdown((open) => !open)}
                 tabIndex={0}
               >
-                {model === 'GotiLo-pro' ? 'GotiLo Pro' : 'GotiLo Pro Vision'} <span className="model-caret">▼</span>
+                {'Gemini 1.5 Flash'} <span className="model-caret">▼</span>
               </button>
               {modelDropdown && (
                 <ul className="model-dropdown">
@@ -166,7 +166,7 @@ function App() {
                         setModelDropdown(false);
                       }}
                     >
-                      {m === 'GotiLo-pro' ? 'GotiLo Pro' : 'GotiLo Pro Vision'}
+                      {'Gemini 1.5 Flash'}
                     </li>
                   ))}
                 </ul>

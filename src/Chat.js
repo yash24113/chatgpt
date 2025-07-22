@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import Message from "./Message";
-import { FaPlus, FaMicrophone, FaImage, FaRegLightbulb } from "react-icons/fa";
+import { FaPlus, FaMicrophone, FaImage, FaRegLightbulb, FaStop } from "react-icons/fa";
 
-async function fetchGotiLo(messages, model) {
+async function fetchGotiLo(messages, model, signal) {
   const response = await fetch('http://localhost:5000/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, model }),
+    signal,
   });
   const data = await response.json();
   return data.reply;
@@ -22,8 +23,8 @@ const assistantAvatar = 'https://thumbs.dreamstime.com/b/chat-bot-icon-virtual-a
 function getGreeting(name = "Yash") {
   const hour = new Date().getHours();
   let greeting = "Good Morning";
-  if (hour >= 12 && hour < 18) greeting = "Good Afternoon";
-  else if (hour >= 18 || hour < 4) greeting = "Good Evening";
+  if (hour >= 12 && hour < 16) greeting = "Good Afternoon";
+  else if (hour >= 16 || hour < 23) greeting = "Good Evening";
   return `${greeting}, ${name}`;
 }
 
@@ -33,6 +34,7 @@ function Chat({ model, messages, onUpdateMessages }) {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const [placeholder, setPlaceholder] = useState("Ask GotiLo");
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     const phrases = [
@@ -53,6 +55,9 @@ function Chat({ model, messages, onUpdateMessages }) {
     e.preventDefault();
     if (!input.trim()) return;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const newMessages = [
       ...messages,
       { role: "user", content: input.trim() },
@@ -63,16 +68,42 @@ function Chat({ model, messages, onUpdateMessages }) {
     setIsTyping(true);
 
     try {
-      const reply = await fetchGotiLo(newMessages, model);
-      onUpdateMessages([...newMessages, { role: "assistant", content: reply }]);
+      // Create a new array with only the last user message for the API call
+      const lastUserMessage = [newMessages[newMessages.length - 1]];
+      const reply = await fetchGotiLo(lastUserMessage, model, controller.signal);
+      
+      // If reply starts with 'Error:', show a user-friendly message
+      if (reply && reply.startsWith('Error:')) {
+        onUpdateMessages([
+          ...newMessages,
+          { role: "assistant", content: reply + "\n(If this persists, check your API key, network, or server logs.)" },
+        ]);
+      } else {
+        onUpdateMessages([...newMessages, { role: "assistant", content: reply }]);
+      }
     } catch (err) {
-      onUpdateMessages([
-        ...newMessages,
-        { role: "assistant", content: "Error: No response from GotiLo." },
-      ]);
+      if (err.name === 'AbortError') {
+        onUpdateMessages([
+          ...newMessages,
+          { role: "assistant", content: "Request cancelled by user." },
+        ]);
+      } else {
+        onUpdateMessages([
+          ...newMessages,
+          { role: "assistant", content: "Error: Could not connect to the server. Please check your network or try again later." },
+        ]);
+      }
+    } finally {
+      setLoading(false);
+      setIsTyping(false);
+      abortControllerRef.current = null;
     }
-    setLoading(false);
-    setIsTyping(false);
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
   };
 
   // Edit user message handler
@@ -120,30 +151,41 @@ function Chat({ model, messages, onUpdateMessages }) {
         {loading && <Message text="Typing..." sender="assistant" isTyping={isTyping} />}
         <div ref={messagesEndRef} />
       </div>
-      <div className="input-form">
-        {/* <img src={userAvatar} alt="User" className="input-avatar" /> */}
-        <form className="input-row" onSubmit={handleSend} style={{ flex: 1 }}>
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder={placeholder}
-          />
-          <button type="submit" className="send-btn" disabled={!input.trim()}>
-            {input.trim() ? (
-              <img src={userAvatar} alt="Send" className="send-avatar" />
-            ) : (
-              sendIcon
-            )}
+
+      {loading ? (
+        <div className="stop-generating-container">
+          <button onClick={handleStop} className="stop-btn">
+            <FaStop /> Stop generating
           </button>
-        </form>
-      </div>
-      <div className="input-toolbar">
-        <span><FaPlus /> Deep Research</span>
-        <span><FaRegLightbulb /> Canvas</span>
-        <span><FaImage /> Image</span>
-      </div>
-      <div className="GotiLo-footer">GotiLo can make mistakes, so double-check it</div>
+        </div>
+      ) : (
+        <>
+          <div className="input-form">
+            {/* <img src={userAvatar} alt="User" className="input-avatar" /> */}
+            <form className="input-row" onSubmit={handleSend} style={{ flex: 1 }}>
+              <input
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder={placeholder}
+              />
+              <button type="submit" className="send-btn" disabled={!input.trim()}>
+                {input.trim() ? (
+                  <img src={userAvatar} alt="Send" className="send-avatar" />
+                ) : (
+                  sendIcon
+                )}
+              </button>
+            </form>
+          </div>
+          <div className="input-toolbar">
+            <span><FaPlus /> Deep Research</span>
+            <span><FaRegLightbulb /> Canvas</span>
+            <span><FaImage /> Image</span>
+          </div>
+          <div className="GotiLo-footer">GotiLo can make mistakes, so double-check it</div>
+        </>
+      )}
     </div>
   );
 }
