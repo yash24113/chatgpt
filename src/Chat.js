@@ -3,7 +3,7 @@ import Message from "./Message";
 import { FaPlus, FaMicrophone, FaImage, FaRegLightbulb, FaStop } from "react-icons/fa";
 
 async function fetchGotiLo(messages, model, signal) {
-  const response = await fetch(`https://gotilo-backend.vercel.app/api/gemini`, {
+  const response = await fetch(process.env.REACT_APP_GOTILO_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, model }),
@@ -12,6 +12,7 @@ async function fetchGotiLo(messages, model, signal) {
   const data = await response.json();
   return data.reply;
 }
+
 
 const sendIcon = (
   <img src="https://cdn-icons-png.flaticon.com/256/9187/9187575.png" alt="Send" className="send-img-icon" />
