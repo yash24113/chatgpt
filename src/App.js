@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Chat from "./Chat";
-<<<<<<< HEAD
 import Login from "./Login";
 import "./App.css";
-=======
->>>>>>> 8b899c5a7e30ee580078318a588c1d04826190c8
-import { FaBars, FaCog, FaPlus, FaUserCircle, FaPencilAlt } from "react-icons/fa";
+import { FaBars, FaCog, FaPlus, FaPencilAlt } from "react-icons/fa";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
@@ -16,7 +13,7 @@ function App() {
     setIsLoggedIn(true);
   }
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
   const [model, setModel] = useState("gemini-1.5-flash");
   const [modelDropdown, setModelDropdown] = useState(false);
   const [chats, setChats] = useState([
@@ -85,25 +82,15 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-<<<<<<< HEAD
   if (!isLoggedIn) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
-=======
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const isMobile = windowWidth <= 768;
->>>>>>> 8b899c5a7e30ee580078318a588c1d04826190c8
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
       {/* Sidebar */}
       <aside style={{
-        width: sidebarOpen ? (isMobile ? "70%" : "260px") : "60px",
+        width: sidebarOpen ? "260px" : "60px",
         backgroundColor: "#f5f5f5",
         borderRight: "1px solid #ccc",
         transition: "all 0.3s",
