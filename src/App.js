@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
 import Chat from "./Chat";
+import Login from "./Login";
 import "./App.css";
 import { FaBars, FaCog, FaPlus, FaUserCircle, FaPencilAlt } from "react-icons/fa";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
+
+  // Handle login success
+  const handleLoginSuccess = (token) => {
+    localStorage.setItem('token', token);
+    setIsLoggedIn(true);
+  }
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [model, setModel] = useState("gemini-1.5-flash");
   const [modelDropdown, setModelDropdown] = useState(false);
@@ -76,6 +84,10 @@ function App() {
     const interval = setInterval(updateDateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="app-container">
