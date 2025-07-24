@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './styles.css';
 import { FaCopy, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 
 const userAvatar = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQoYalG0iZwdwwSFMhNL4aDADjcSJFcuo31Y9OY6saF8ZG5dq3lLc8uXw0eJfUwvdwjTw&usqp=CAU';
@@ -34,21 +33,96 @@ export default function Message({ text, sender, isTyping, onEdit, idx }) {
     setEditValue(text);
   };
 
-  if (sender === 'user') {
-    return (
-      <div className={`message-row user`}>
-        <span className={`avatar avatar-user`}>
-          <img
-            src={avatarSrc}
-            alt={sender}
-            className="avatar-img"
-          />
-        </span>
-        <div className="message message-user">
+  const messageRowStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    padding: '12px',
+    gap: '10px',
+    width: '100%',
+    maxWidth: '100%',
+    flexDirection: 'row',
+  };
+
+  const messageBoxStyle = {
+    background: sender === 'user' ? '#d4f1f4' : '#f0f0f0',
+    padding: '10px 14px',
+    borderRadius: '12px',
+    maxWidth: 'calc(100% - 60px)',
+    wordBreak: 'break-word',
+    fontSize: '16px',
+    position: 'relative',
+    flex: 1,
+  };
+
+  const avatarStyle = {
+    width: '38px',
+    height: '38px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+  };
+
+  const actionsStyle = {
+    position: 'absolute',
+    top: '5px',
+    right: '8px',
+    display: 'flex',
+    gap: '8px',
+  };
+
+  const actionBtnStyle = {
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#333',
+  };
+
+  const inputStyle = {
+    padding: '6px 10px',
+    fontSize: '15px',
+    width: 'calc(100% - 80px)',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+    marginBottom: '6px',
+  };
+
+  const typingIndicatorStyle = {
+    display: 'flex',
+    gap: '5px',
+    marginTop: '10px',
+    marginLeft: '5px',
+  };
+
+  const typingDotStyle = {
+    width: '8px',
+    height: '8px',
+    backgroundColor: '#999',
+    borderRadius: '50%',
+    animation: 'blink 1.5s infinite ease-in-out',
+  };
+
+  return (
+    <div
+      style={{
+        ...messageRowStyle,
+        justifyContent: sender === 'user' ? 'flex-end' : 'flex-start',
+        flexWrap: 'wrap',
+      }}
+    >
+      {sender === 'assistant' && (
+        <img src={avatarSrc} alt={sender} style={avatarStyle} />
+      )}
+      {isTyping ? (
+        <div style={{ ...typingIndicatorStyle }}>
+          <div style={typingDotStyle}></div>
+          <div style={typingDotStyle}></div>
+          <div style={typingDotStyle}></div>
+        </div>
+      ) : (
+        <div style={{ ...messageBoxStyle }}>
           {editing ? (
             <>
               <input
-                className="edit-message-input"
                 value={editValue}
                 onChange={e => setEditValue(e.target.value)}
                 onKeyDown={e => {
@@ -56,48 +130,30 @@ export default function Message({ text, sender, isTyping, onEdit, idx }) {
                   if (e.key === 'Escape') handleEditCancel();
                 }}
                 autoFocus
+                style={inputStyle}
               />
-              <button className="msg-action-btn" onClick={handleEditSave} title="Save"><FaCheck /></button>
-              <button className="msg-action-btn" onClick={handleEditCancel} title="Cancel"><FaTimes /></button>
+              <div style={actionsStyle}>
+                <button style={actionBtnStyle} onClick={handleEditSave} title="Save"><FaCheck /></button>
+                <button style={actionBtnStyle} onClick={handleEditCancel} title="Cancel"><FaTimes /></button>
+              </div>
             </>
           ) : (
             <>
               {text}
-              <span className="msg-actions">
-                <button className="msg-action-btn" onClick={handleCopy} title="Copy"><FaCopy /></button>
-                <button className="msg-action-btn" onClick={handleEdit} title="Edit"><FaEdit /></button>
-                {copied && <span className="msg-copied">Copied!</span>}
-              </span>
+              <div style={actionsStyle}>
+                <button style={actionBtnStyle} onClick={handleCopy} title="Copy"><FaCopy /></button>
+                {sender === 'user' && (
+                  <button style={actionBtnStyle} onClick={handleEdit} title="Edit"><FaEdit /></button>
+                )}
+                {copied && <span style={{ fontSize: '12px', color: 'green' }}>Copied!</span>}
+              </div>
             </>
           )}
         </div>
-      </div>
-    );
-  }
-  return (
-    <div className={`message-row assistant`}>
-      <span className={`avatar avatar-assistant`}>
-        <img
-          src={avatarSrc}
-          alt={sender}
-          className="avatar-img"
-        />
-      </span>
-      {isTyping ? (
-        <div className="typing-indicator">
-          <div className="typing-dot"></div>
-          <div className="typing-dot"></div>
-          <div className="typing-dot"></div>
-        </div>
-      ) : (
-        <div className={`message message-assistant`}>
-          {text}
-          <span className="msg-actions">
-            <button className="msg-action-btn" onClick={handleCopy} title="Copy"><FaCopy /></button>
-            {copied && <span className="msg-copied">Copied!</span>}
-          </span>
-        </div>
+      )}
+      {sender === 'user' && (
+        <img src={avatarSrc} alt={sender} style={avatarStyle} />
       )}
     </div>
   );
-} 
+}
