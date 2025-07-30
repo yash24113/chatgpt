@@ -4,7 +4,7 @@ import { FaCopy, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 const userAvatar = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQoYalG0iZwdwwSFMhNL4aDADjcSJFcuo31Y9OY6saF8ZG5dq3lLc8uXw0eJfUwvdwjTw&usqp=CAU';
 const assistantAvatar = 'https://thumbs.dreamstime.com/b/chat-bot-icon-virtual-assistant-automation-flat-line-color-style-363583472.jpg';
 
-export default function Message({ text, sender, isTyping, onEdit, idx }) {
+export default function Message({ text, sender, isTyping, onEdit, idx, image }) {
   const avatarSrc = sender === 'user' ? userAvatar : assistantAvatar;
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(text);
@@ -44,15 +44,17 @@ export default function Message({ text, sender, isTyping, onEdit, idx }) {
   };
 
   const messageBoxStyle = {
-    background: sender === 'user' ? '#d4f1f4' : '#f0f0f0',
+    background: 'none',
+    color: '#111',
     padding: '10px 14px',
-    borderRadius: '12px',
+    borderRadius: '0',
     maxWidth: 'calc(100% - 60px)',
     wordBreak: 'break-word',
     fontSize: '16px',
     position: 'relative',
     flex: 1,
   };
+
 
   const avatarStyle = {
     width: '38px',
@@ -139,6 +141,9 @@ export default function Message({ text, sender, isTyping, onEdit, idx }) {
             </>
           ) : (
             <>
+              {typeof image === 'string' && image.startsWith('data:') && (
+                <img src={image} alt="Pasted" style={{ maxWidth: '220px', maxHeight: '160px', borderRadius: 8, marginBottom: 8, display: 'block' }} />
+              )}
               {text}
               <div style={actionsStyle}>
                 <button style={actionBtnStyle} onClick={handleCopy} title="Copy"><FaCopy /></button>

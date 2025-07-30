@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import Message from "./Message";
 import { FaPlus, FaMicrophone, FaImage, FaRegLightbulb, FaStop } from "react-icons/fa";
+import "./AnimatedInput.css";
 
 async function fetchGotiLo(messages, model, signal) {
-  const response = await fetch(process.env.REACT_APP_GOTILO_API, {
+  const response = await fetch(process.env.REACT_APP_GOTILO_API || "http://localhost:5000/api/gemini", {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, model }),
@@ -31,13 +32,14 @@ function getGreeting(name = "Yash") {
   return `${greeting}, ${name}`;
 }
 
-function Chat({ model, messages, onUpdateMessages }) {
+function Chat({ model, messages, onUpdateMessages, userEmail }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const [placeholder, setPlaceholder] = useState("Ask GotiLo");
   const abortControllerRef = useRef(null);
+  const [pastedImage, setPastedImage] = useState(null);
 
   useEffect(() => {
     const phrases = ["Ask GotiLo", "Ask GotiLo.", "Ask GotiLo..", "Ask GotiLo..."];
@@ -51,14 +53,17 @@ function Chat({ model, messages, onUpdateMessages }) {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && !pastedImage) return;
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const newMessages = [...messages, { role: "user", content: input.trim() }];
+    const userMsg = { role: "user", content: input.trim() };
+    if (pastedImage) userMsg.image = pastedImage;
+    const newMessages = [...messages, userMsg];
     onUpdateMessages(newMessages);
     setInput("");
+    setPastedImage(null);
     setLoading(true);
     setIsTyping(true);
 
@@ -70,6 +75,21 @@ function Chat({ model, messages, onUpdateMessages }) {
         ? `${reply}\n(If this persists, check your API key, network, or server logs.)`
         : reply;
 
+      // Save chat to backend
+      const now = new Date();
+      const date = now.toLocaleDateString('en-GB');
+      const time = now.toLocaleTimeString('en-GB', { hour12: false });
+      const chatheading = `New chat`;
+      const userprompt = input.trim();
+      const airesponse = assistantMessage;
+      const responsetime = 0; // You can measure if needed
+      if (userEmail) {
+        fetch('http://localhost:5000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail, chatheading, userprompt, airesponse, responsetime, date, time })
+        });
+      }
       onUpdateMessages([...newMessages, { role: "assistant", content: assistantMessage }]);
     } catch (err) {
       const errorMessage = err.name === "AbortError"
@@ -88,11 +108,46 @@ function Chat({ model, messages, onUpdateMessages }) {
     if (abortControllerRef.current) abortControllerRef.current.abort();
   };
 
-  const handleEditMessage = (idx, newText) => {
+  const handleEditMessage = async (idx, newText) => {
+    // Only proceed if editing a user message
+    if (messages[idx]?.role !== 'user' || !newText.trim()) return;
+    // Replace the user message
     const updated = messages.map((msg, i) =>
       i === idx ? { ...msg, content: newText } : msg
     );
     onUpdateMessages(updated);
+    setLoading(true);
+    setIsTyping(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    try {
+      // Only send the edited user message to the backend (like a new prompt)
+      const reply = await fetchGotiLo([{ role: 'user', content: newText.trim() }], model, controller.signal);
+      const assistantMessage = reply?.startsWith("Error:")
+        ? `${reply}\n(If this persists, check your API key, network, or server logs.)`
+        : reply;
+      // Add the new assistant message after the edited user message
+      const newMessages = [
+        ...updated.slice(0, idx + 1),
+        { role: "assistant", content: assistantMessage },
+        ...updated.slice(idx + 1)
+      ];
+      onUpdateMessages(newMessages);
+    } catch (err) {
+      const errorMessage = err.name === "AbortError"
+        ? "Request cancelled by user."
+        : "Error: Could not connect to the server. Please check your network or try again later.";
+      const newMessages = [
+        ...updated.slice(0, idx + 1),
+        { role: "assistant", content: errorMessage },
+        ...updated.slice(idx + 1)
+      ];
+      onUpdateMessages(newMessages);
+    } finally {
+      setLoading(false);
+      setIsTyping(false);
+      abortControllerRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -137,16 +192,36 @@ function Chat({ model, messages, onUpdateMessages }) {
             {getGreeting("Yash")}
           </div>
         ) : (
-          messages.map((msg, idx) => (
-            <Message
-              key={idx}
-              text={msg.content}
-              sender={msg.role}
-              isTyping={isTyping}
-              idx={idx}
-              onEdit={msg.role === "user" ? handleEditMessage : undefined}
-            />
-          ))
+          // Special case: only 2 messages (user then assistant), show as a single pair
+          messages.length === 2 && messages[0].role === 'user' && messages[1].role === 'assistant'
+            ? <>
+                <Message
+                  key={0}
+                  text={messages[0].content}
+                  sender={messages[0].role}
+                  isTyping={false}
+                  idx={0}
+                  onEdit={handleEditMessage}
+                />
+                <Message
+                  key={1}
+                  text={messages[1].content}
+                  sender={messages[1].role}
+                  isTyping={false}
+                  idx={1}
+                  onEdit={undefined}
+                />
+              </>
+            : messages.map((msg, idx) => (
+                <Message
+                  key={idx}
+                  text={msg.content}
+                  sender={msg.role}
+                  isTyping={isTyping && idx === messages.length-1 && msg.role === 'assistant'}
+                  idx={idx}
+                  onEdit={msg.role === "user" ? handleEditMessage : undefined}
+                />
+              ))
         )}
         {loading && <Message text="Typing..." sender="assistant" isTyping />}
         <div ref={messagesEndRef} />
@@ -183,18 +258,23 @@ function Chat({ model, messages, onUpdateMessages }) {
           >
             <form
               onSubmit={handleSend}
+              className="animated-border"
               style={{
                 flex: 1,
                 display: "flex",
                 alignItems: "center",
-                border: "1px solid #ccc",
-                borderRadius: "30px",
                 padding: "5px 10px",
-                backgroundColor: "#fff",
+                backgroundColor: "#fff"
               }}
             >
-              <input
-                type="text"
+              {pastedImage && (
+                <img
+                  src={pastedImage}
+                  alt="Preview"
+                  style={{ maxWidth: 160, maxHeight: 100, borderRadius: 8, marginRight: 12, marginLeft: 4, marginBottom: 4 }}
+                />
+              )}
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={placeholder}
@@ -205,6 +285,33 @@ function Chat({ model, messages, onUpdateMessages }) {
                   padding: "10px",
                   fontSize: "1rem",
                   background: "transparent",
+                  resize: "none",
+                  minHeight: "36px",
+                  maxHeight: "120px",
+                  lineHeight: "1.4",
+                  overflowY: "auto"
+                }}
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() || pastedImage) handleSend(e);
+                  }
+                }}
+                onPaste={async (e) => {
+                  const items = e.clipboardData.items;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                      const file = items[i].getAsFile();
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setPastedImage(ev.target.result);
+                      };
+                      reader.readAsDataURL(file);
+                      e.preventDefault();
+                      break;
+                    }
+                  }
                 }}
               />
               <button

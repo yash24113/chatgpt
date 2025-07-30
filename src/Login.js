@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./styles.css";
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, setUserEmail }) {
   const [step, setStep] = useState(1); // 1: enter email, 2: enter OTP
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -13,13 +13,14 @@ function Login({ onLoginSuccess }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/send-otp", {
+      const res = await fetch("http://localhost:5000/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        setUserEmail(email);
         setStep(2);
       } else {
         setError(data.message || "Failed to send OTP");
@@ -35,14 +36,14 @@ function Login({ onLoginSuccess }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/verify-otp", {
+      const res = await fetch("http://localhost:5000/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        onLoginSuccess(data.token || "");
+        onLoginSuccess(data.token || "", email);
       } else {
         setError(data.message || "Invalid OTP");
       }

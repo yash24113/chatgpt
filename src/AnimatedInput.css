@@ -1,0 +1,18 @@
+.animated-border {
+  border: 2px solid transparent;
+  border-radius: 32px;
+  background: linear-gradient(white, white) padding-box,
+    linear-gradient(270deg, #4f8cff, #ff6ec4, #f9d423, #4f8cff) border-box;
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  animation: border-animate 3s linear infinite;
+}
+
+@keyframes border-animate {
+  0% {
+    background-position: 0% 50%, 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%, 0% 50%;
+  }
+}
