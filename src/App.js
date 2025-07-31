@@ -193,27 +193,88 @@ function App() {
             <img className="sidebar-logo" src="https://thumbs.dreamstime.com/b/chat-bot-icon-virtual-assistant-automation-flat-line-color-style-363583472.jpg" alt="Logo" style={{ width: 36, height: 36, marginRight: 7 }} />
             <span style={{ fontWeight: 600, fontSize: 20, color: '#007bff', letterSpacing: 0.5 }}>GotiLo</span>
           </div>
-          {/* Recent Chats List (with edit support) */}
+          {/* Recent Chats List */}
           <div style={{ flex: 1, overflowY: 'auto', marginTop: 10 }}>
             <h4 style={{ margin: '0 0 10px 0', color: '#007bff' }}>Recent Chats</h4>
             {chats.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>No chats yet.</div>}
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: '35vh', overflowY: 'auto' }}>
-              {chats.map(chat => (
+            {chats.map(chat => (
+              <div key={chat.id}
+                style={{
+                  padding: '8px 12px',
+                  marginBottom: 6,
+                  borderRadius: 8,
+                  background: currentChatId === chat.id ? '#e7f1ff' : '#fff',
+                  border: currentChatId === chat.id ? '2px solid #007bff' : '1px solid #eee',
+                  cursor: 'pointer',
+                  fontWeight: currentChatId === chat.id ? 600 : 400
+                }}
+                onClick={() => handleLoadChat(chat.id)}
+              >
+                <div style={{ fontSize: 15 }}>{chat.name}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>{chat.date} {chat.time}</div>
+                {chat.responsetime != null && <div style={{ fontSize: 12, color: '#444' }}>Reply: {(chat.responsetime/1000).toFixed(2)}s</div>}
+              </div>
+            ))}
+          </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 20px 4px 20px', color: '#555', fontWeight: 600, fontSize: 15 }}>
+                  <FaComments size={18} />
+                  <span>Recent</span>
+                </div>
+                <div style={{ padding: '0 20px 0 20px', width: '100%' }}>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, maxHeight: '35vh', overflowY: 'auto' }}>
+                    {chats.map((chat) => (
+                      <li
+                        key={chat.id}
+                        onClick={() => { handleLoadChat(chat.id); setMobileSidebar(false); }}
+                        style={{
+                          padding: "8px 0",
+                          backgroundColor: chat.id === currentChatId ? "#e0e0e0" : "transparent",
+                          borderRadius: "4px",
+                          marginBottom: "2px",
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          color: '#555'
+                        }}
+                      >
+                        <span style={{ flex: 1 }}>{chat.name}</span>
+                        <button onClick={e => { e.stopPropagation(); handleStartEditing(chat); }} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer' }} title="Edit">
+                          <FaPencilAlt />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Logout Icon */}
+                <button
+                  onClick={() => { setShowLogoutConfirm(true); setMobileSidebar(false); }}
+                  style={{ background: '#f5f5f5', color: '#d00', border: 'none', borderRadius: 10, padding: '12px 0', fontWeight: 600, fontSize: 15, margin: '22px 20px 18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+                  title="Logout"
+                >
+                  <FaSignOutAlt size={20} />
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Drawer for mobile recent chats */}
+          <div className="sidebar-recent" style={{ padding: "10px", display: (window.innerWidth > 900 || mobileSidebar) ? 'block' : 'none' }}>
+            <div style={{ fontWeight: 600, color: '#555', margin: '30px 0 10px 0', fontSize: 18 }}>Recent</div>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {chats.map((chat) => (
                 <li
                   key={chat.id}
-                  onClick={() => handleLoadChat(chat.id)}
+                  onClick={() => { handleLoadChat(chat.id); setMobileSidebar(false); }}
                   onDoubleClick={() => handleStartEditing(chat)}
                   style={{
-                    padding: '8px',
-                    marginBottom: 6,
-                    borderRadius: 8,
-                    background: currentChatId === chat.id ? '#e7f1ff' : '#fff',
-                    border: currentChatId === chat.id ? '2px solid #007bff' : '1px solid #eee',
-                    cursor: 'pointer',
-                    fontWeight: currentChatId === chat.id ? 600 : 400,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    padding: "8px",
+                    backgroundColor: chat.id === currentChatId ? "#e0e0e0" : "transparent",
+                    borderRadius: "4px",
+                    marginBottom: "5px",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     color: '#555'
                   }}
                 >
@@ -227,31 +288,24 @@ function App() {
                         if (e.key === 'Escape') handleCancelEditing();
                       }}
                       autoFocus
-                      style={{ flex: 1, marginRight: '5px' }}
+                      style={{ flex: 1, marginRight: "5px" }}
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
                     <>
                       <span style={{ flex: 1 }}>{chat.name}</span>
-                      <button onClick={e => { e.stopPropagation(); handleStartEditing(chat); }} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer' }} title="Edit">
+                      <button onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartEditing(chat);
+                      }} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}>
                         <FaPencilAlt />
                       </button>
                     </>
                   )}
-                  <div style={{ marginLeft: 8, fontSize: 12, color: '#888', minWidth: 70 }}>{chat.date} {chat.time}</div>
-                  {chat.responsetime != null && <div style={{ fontSize: 12, color: '#444', marginLeft: 8 }}>Reply: {(chat.responsetime/1000).toFixed(2)}s</div>}
                 </li>
               ))}
             </ul>
           </div>
-          {/* Logout Icon */}
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            style={{ background: '#f5f5f5', color: '#d00', border: 'none', borderRadius: 10, padding: '12px 0', fontWeight: 600, fontSize: 15, margin: '22px 20px 18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-            title="Logout"
-          >
-            <FaSignOutAlt size={20} />
-          </button>
           <div className="sidebar-settings" style={{ marginTop: "auto", padding: "10px" }}>
             <button style={{ background: "none", border: "none", display: "flex", alignItems: "center", cursor: "pointer", color: "#222" }}>
               <FaCog style={{ marginRight: 6 }} />
