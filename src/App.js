@@ -38,29 +38,10 @@ function App() {
 
   // Handle login success
   const [userEmail, setUserEmail] = useState("");
-  const handleLoginSuccess = async (token, email) => {
+  const handleLoginSuccess = (token, email) => {
     localStorage.setItem('token', token);
     setIsLoggedIn(true);
     setUserEmail(email);
-    // Fetch chat history after login
-    try {
-      const res = await fetch(`http://localhost:5000/api/chat/${email}`);
-      const data = await res.json();
-      setChats(data.map((c, idx) => ({
-        id: c._id,
-        name: c.chatheading,
-        messages: [
-          { role: 'user', content: c.userprompt },
-          { role: 'assistant', content: c.airesponse, responsetime: c.responsetime }
-        ],
-        date: c.date,
-        time: c.time,
-        responsetime: c.responsetime
-      })));
-      setCurrentChatId(data.length > 0 ? data[0]._id : null);
-    } catch (e) {
-      setChats([]);
-    }
   }
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 900);
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -76,9 +57,11 @@ function App() {
 
   const [model, setModel] = useState("gemini-1.5-flash");
   const [modelDropdown, setModelDropdown] = useState(false);
-  const [chats, setChats] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [chatCounter, setChatCounter] = useState(1);
+  const [chats, setChats] = useState([
+    { id: 1, name: "New chat", messages: [{ role: "assistant", content: "Hello, Yash" }] }
+  ]);
+  const [currentChatId, setCurrentChatId] = useState(1);
+  const [chatCounter, setChatCounter] = useState(2);
   const models = ["gemini-1.5-flash"];
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingChatName, setEditingChatName] = useState("");
@@ -89,15 +72,12 @@ function App() {
 
   const handleNewChat = () => {
     const newChat = {
-      id: `local-${chatCounter}`,
+      id: chatCounter,
       name: `New chat ${chatCounter}`,
-      messages: [],
-      date: dateTime.date,
-      time: dateTime.time,
-      responsetime: null
+      messages: [{ role: "assistant", content: "Hello, Yash" }]
     };
     setChats([newChat, ...chats]);
-    setCurrentChatId(newChat.id);
+    setCurrentChatId(chatCounter);
     setChatCounter(chatCounter + 1);
   };
 
@@ -131,32 +111,6 @@ function App() {
     handleCancelEditing();
   };
 
-  // On mount, if logged in and email present, fetch chat history (for refresh persistence)
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const email = userEmail || localStorage.getItem('userEmail');
-    if (token && email) {
-      setIsLoggedIn(true);
-      setUserEmail(email);
-      fetch(`http://localhost:5000/api/chat/${email}`)
-        .then(res => res.json())
-        .then(data => {
-          setChats(data.map((c, idx) => ({
-            id: c._id,
-            name: c.chatheading,
-            messages: [
-              { role: 'user', content: c.userprompt },
-              { role: 'assistant', content: c.airesponse, responsetime: c.responsetime }
-            ],
-            date: c.date,
-            time: c.time,
-            responsetime: c.responsetime
-          })));
-          setCurrentChatId(data.length > 0 ? data[0]._id : null);
-        }).catch(() => setChats([]));
-    }
-  }, [userEmail]);
-
   useEffect(() => {
     function updateDateTime() {
       const now = new Date();
@@ -169,9 +123,15 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+<<<<<<< HEAD
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={handleLoginSuccess} setUserEmail={setUserEmail} />;
+    return <Login onLoginSuccess={(token) => handleLoginSuccess(token, userEmail)} setUserEmail={setUserEmail} />;
   }
+=======
+  // if (!isLoggedIn) {
+  //   return <Login onLoginSuccess={handleLoginSuccess} />;
+  // }
+>>>>>>> d2db314cea090d88a3eb29f6a39e1e45ef30bd42
 
   return (
     <div className="app-root" style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
@@ -189,33 +149,61 @@ function App() {
           <button className="sidebar-hamburger" onClick={() => setMobileSidebar(!mobileSidebar)} style={{ background: "none", border: "none", fontSize: "1.8rem", marginBottom: "10px", cursor: "pointer", alignSelf: "flex-start", display: window.innerWidth <= 900 ? 'block' : 'none' }}>
             <FaBars />
           </button>
+          {/* <img className="sidebar-logo" src="https://thumbs.dreamstime.com/b/chat-bot-icon-virtual-assistant-automation-flat-line-color-style-363583472.jpg" alt="Logo" style={{ width: 40, height: 40, marginRight: 10 }} />
+          <h1 className="sidebar-title" style={{ fontSize: "1.2rem",color:"#007bff", marginRight: 12 }}>GotiLo</h1>
+          */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 10px 0', paddingLeft: 2 }}>
             <img className="sidebar-logo" src="https://thumbs.dreamstime.com/b/chat-bot-icon-virtual-assistant-automation-flat-line-color-style-363583472.jpg" alt="Logo" style={{ width: 36, height: 36, marginRight: 7 }} />
             <span style={{ fontWeight: 600, fontSize: 20, color: '#007bff', letterSpacing: 0.5 }}>GotiLo</span>
           </div>
-          {/* Recent Chats List */}
-          <div style={{ flex: 1, overflowY: 'auto', marginTop: 10 }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#007bff' }}>Recent Chats</h4>
-            {chats.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>No chats yet.</div>}
-            {chats.map(chat => (
-              <div key={chat.id}
+
+          {/* Mobile sidebar overlay */}
+          {mobileSidebar && window.innerWidth <= 900 && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.18)',
+                zIndex: 2000,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+              }}
+              onClick={() => setMobileSidebar(false)}
+            >
+              <div
                 style={{
-                  padding: '8px 12px',
-                  marginBottom: 6,
-                  borderRadius: 8,
-                  background: currentChatId === chat.id ? '#e7f1ff' : '#fff',
-                  border: currentChatId === chat.id ? '2px solid #007bff' : '1px solid #eee',
-                  cursor: 'pointer',
-                  fontWeight: currentChatId === chat.id ? 600 : 400
+                  background: '#fff',
+                  width: 270,
+                  height: '100vh',
+                  boxShadow: '2px 0 16px rgba(0,0,0,0.13)',
+                  borderRadius: '0 16px 16px 0',
+                  padding: 0,
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0,
+                  position: 'relative',
                 }}
-                onClick={() => handleLoadChat(chat.id)}
+                onClick={e => e.stopPropagation()}
               >
-                <div style={{ fontSize: 15 }}>{chat.name}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>{chat.date} {chat.time}</div>
-                {chat.responsetime != null && <div style={{ fontSize: 12, color: '#444' }}>Reply: {(chat.responsetime/1000).toFixed(2)}s</div>}
-              </div>
-            ))}
-          </div>
+                {/* Close Icon */}
+                <button onClick={() => setMobileSidebar(false)} style={{ position: 'absolute', top: 13, right: 14, background: 'none', border: 'none', fontSize: 25, color: '#555', zIndex: 1 }} title="Close">
+                  <FaTimes />
+                </button>
+                {/* User Icon */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 0 12px 0', gap: 8 }}>
+                  <FaUserCircle size={48} color="#007bff" style={{ marginBottom: 2 }} />
+                  <span style={{ fontWeight: 600, fontSize: 17, color: '#007bff', marginTop: 2 }}>GotiLo</span>
+                </div>
+                {/* New Chat Icon */}
+                <button onClick={() => { handleNewChat(); setMobileSidebar(false); }} style={{ background: '#007bff', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 0', fontWeight: 600, fontSize: 15, margin: '0 20px 8px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }} title="New chat">
+                  <FaPlus size={20} />
+                </button>
+                {/* Recent Chats Icon */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 20px 4px 20px', color: '#555', fontWeight: 600, fontSize: 15 }}>
                   <FaComments size={18} />
                   <span>Recent</span>
