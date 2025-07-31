@@ -123,15 +123,9 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-<<<<<<< HEAD
   if (!isLoggedIn) {
     return <Login onLoginSuccess={(token) => handleLoginSuccess(token, userEmail)} setUserEmail={setUserEmail} />;
   }
-=======
-  // if (!isLoggedIn) {
-  //   return <Login onLoginSuccess={handleLoginSuccess} />;
-  // }
->>>>>>> d2db314cea090d88a3eb29f6a39e1e45ef30bd42
 
   return (
     <div className="app-root" style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", fontFamily: "Arial, sans-serif" }}>
