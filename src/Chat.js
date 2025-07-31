@@ -69,7 +69,10 @@ function Chat({ model, messages, onUpdateMessages, userEmail }) {
 
     try {
       const lastUserMessage = [newMessages[newMessages.length - 1]];
+      const startTime = Date.now();
       const reply = await fetchGotiLo(lastUserMessage, model, controller.signal);
+      const endTime = Date.now();
+      const replyTime = endTime - startTime; // in ms
 
       const assistantMessage = reply?.startsWith("Error:")
         ? `${reply}\n(If this persists, check your API key, network, or server logs.)`
@@ -82,7 +85,7 @@ function Chat({ model, messages, onUpdateMessages, userEmail }) {
       const chatheading = `New chat`;
       const userprompt = input.trim();
       const airesponse = assistantMessage;
-      const responsetime = 0; // You can measure if needed
+      const responsetime = replyTime;
       if (userEmail) {
         fetch('http://localhost:5000/api/chat', {
           method: 'POST',
@@ -90,7 +93,7 @@ function Chat({ model, messages, onUpdateMessages, userEmail }) {
           body: JSON.stringify({ email: userEmail, chatheading, userprompt, airesponse, responsetime, date, time })
         });
       }
-      onUpdateMessages([...newMessages, { role: "assistant", content: assistantMessage }]);
+      onUpdateMessages([...newMessages, { role: "assistant", content: assistantMessage, responsetime: replyTime }]);
     } catch (err) {
       const errorMessage = err.name === "AbortError"
         ? "Request cancelled by user."
